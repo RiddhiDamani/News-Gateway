@@ -41,7 +41,7 @@
             app:layout_constraintTop_toBottomOf="@+id/news_date" />
 
         <ImageView
-            android:id="@+id/news_image"
+            android:id="@+id/news_picture"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -56,7 +56,7 @@
             app:srcCompat="@drawable/loading" />
 
         <TextView
-            android:id="@+id/news_details"
+            android:id="@+id/news_description"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="16dp"
@@ -69,7 +69,7 @@
             app:layout_constraintBottom_toTopOf="@+id/screen_num"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/news_image" />
+            app:layout_constraintTop_toBottomOf="@+id/news_picture" />
 
         <TextView
             android:id="@+id/screen_num"
