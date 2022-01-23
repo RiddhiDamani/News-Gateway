@@ -10,6 +10,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.News_Gateway">
         <activity
+            android:name=".NewsArticleActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
