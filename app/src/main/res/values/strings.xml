@@ -2,5 +2,10 @@
     <string name="app_name">News Gateway</string>
     <string name="textview">TextView</string>
     <string name="imageview">contentDesc</string>
+    <string name="menu_opt_topics">Topics</string>
+    <string name="menu_opt_countries">Countries</string>
+    <string name="menu_opt_languages">Languages</string>
+    <string name="open_drawer">Open navigation drawer</string>
+    <string name="close_drawer">Close navigation drawer</string>
 
 </resources>
