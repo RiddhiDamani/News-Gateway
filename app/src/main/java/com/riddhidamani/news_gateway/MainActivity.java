@@ -103,7 +103,6 @@ public class MainActivity extends AppCompatActivity {
     private String currentMediaName;
     private String currentMediaID = "";
 
-    private NewsArticleDownloader newsArticleDownloader = new NewsArticleDownloader();
     ArrayList<NewsArticle> articleList = new ArrayList<>();
 
 
@@ -381,6 +380,9 @@ public class MainActivity extends AppCompatActivity {
         buildURL.appendQueryParameter("apikey", apiKey);
         String urlToUse = buildURL.build().toString();
 
+        articleList.clear();
+        currentNewsArticleList.clear();
+
         Response.Listener<JSONObject> listener = new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
@@ -440,12 +442,13 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    // NEED TO WORK ------------------------------------------->
     public void setArticles(ArrayList<NewsArticle> articleList) {
+        currentNewsArticleList.clear();
+        setTitle(currentMediaName);
         currentNewsArticleList.addAll(articleList);
         newsArticleAdapter.notifyDataSetChanged();
         viewPager.setCurrentItem(0);
-        setTitle(currentMediaName + " (" + articleList.size() + ")");
+
     }
 
     public void setupNameList(List<String> nameList) {
@@ -552,6 +555,7 @@ public class MainActivity extends AppCompatActivity {
     private void selectItemInDrawer(int position) {
         viewPager.setBackground(null);
         String currentMediaName = displayMediaNames.get(position);
+        currentNewsArticleList.clear();
         this.currentMediaName = currentMediaName;
         String mediaID = "";
         for(Sources s: sourceList) {
