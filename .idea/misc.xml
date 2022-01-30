@@ -6,6 +6,8 @@
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.25" />
         <entry key="app/src/main/res/layout/activity_news_article.xml" value="0.23229166666666667" />
         <entry key="app/src/main/res/layout/drawer_item.xml" value="0.23229166666666667" />
+        <entry key="app/src/main/res/menu/categories_menu_list.xml" value="0.10555555555555556" />
+        <entry key="app/src/main/res/menu/main_menu_list.xml" value="0.23229166666666667" />
         <entry key="app/src/main/res/menu/menu_list.xml" value="0.23229166666666667" />
       </map>
     </option>
