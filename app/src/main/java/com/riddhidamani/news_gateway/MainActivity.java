@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.viewpager2.widget.ViewPager2;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Configuration;
@@ -35,6 +36,8 @@ import com.riddhidamani.news_gateway.databinding.ActivityMainBinding;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private static final String newsSourcesURL = "https://newsapi.org/v2/sources";
-    private static final String newsArticleURL = "https://newsapi.org/v2/top-headlines?sources=";
+    private static final String newsArticleURL = "https://newsapi.org/v2/top-headlines";
     private static final String apiKey = "b8988f2d0bbd4c0186dea5c522fefcd0";
     private RequestQueue queue;
 
@@ -87,11 +90,21 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> languageNameList = new ArrayList<>();
 
     // ViewPager2
+    private NewsArticleAdapter newsArticleAdapter;
+    private ArrayAdapter<String> arrayAdapter;
+    private final ArrayList<NewsArticle> currentNewsArticleList = new ArrayList<>();
     private ViewPager2 viewPager;
 
     // Color Menu
     private HashMap<String, Integer> colorMenu = new HashMap<>();
     private ArrayList<Integer> colors = new ArrayList<>();
+
+    // State to save
+    private String currentMediaName;
+    private String currentMediaID = "";
+
+    private NewsArticleDownloader newsArticleDownloader = new NewsArticleDownloader();
+    ArrayList<NewsArticle> articleList = new ArrayList<>();
 
 
     @Override
@@ -107,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
         mDrawerList.setOnItemClickListener(
                 (parent, view, position, id) -> {
                     selectItemInDrawer(position);
-                    mDrawerLayout.closeDrawer(mDrawerList);
+                    mDrawerLayout.closeDrawer(findViewById(R.id.c_layout));
                 }
         );
 
@@ -136,6 +149,10 @@ public class MainActivity extends AppCompatActivity {
             queue = Volley.newRequestQueue(this);
             performDownload();
         }
+
+        newsArticleAdapter = new NewsArticleAdapter(this, currentNewsArticleList);
+        viewPager = findViewById(R.id.viewpager);
+        viewPager.setAdapter(newsArticleAdapter);
 
         // setup colorMenu
         addAllColors(this);
@@ -254,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
             noResultAlert(selectorTopic, selectorCountry, selectorLanguage);
         }
 
-        ((ArrayAdapter) mDrawerList.getAdapter()).notifyDataSetChanged();
+        arrayAdapter.notifyDataSetChanged();
         setTitle("News Gateway (" + displayMediaNames.size() + ")");
     }
 
@@ -316,23 +333,15 @@ public class MainActivity extends AppCompatActivity {
                             listOfNames.add(name);
                         }
                     }
+                    runOnUiThread(() -> {
+                        setupNameList(listOfNames);
+                        setupTopicList(listOfTopics);
+                        getSources(srcs);
+                        setupCountryList(listOfCountries);
+                        setupLanguageList(listOfLanguages);
+                        setupDrawerItemColor();
 
-                    setupNameList(listOfNames);
-                    setupTopicList(listOfTopics);
-                    getSources(srcs);
-                    setupCountryList(listOfCountries);
-                    setupLanguageList(listOfLanguages);
-                    setupDrawerItemColor();
-
-//                    runOnUiThread(() -> {
-//                        setupNameList(listOfNames);
-//                        setupTopicList(listOfTopics);
-//                        getSources(srcs);
-//                        setupCountryList(listOfCountries);
-//                        setupLanguageList(listOfLanguages);
-//                        setupDrawerItemColor();
-//
-//                    });
+                    });
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -366,27 +375,77 @@ public class MainActivity extends AppCompatActivity {
         queue.add(jsonObjectRequest);
     }
 
-    private void selectItemInDrawer(int position) {
-        viewPager.setBackground(null);
-//        String currentMediaName = displayMediaNames.get(position);
-//        this.currentMediaName = currentMediaName;
-//        // get media's id
-//        String mediaID = "";
-//        for(Source s: sourceList) {
-//            if(s.getName().equals(currentMediaName)){
-//                mediaID = s.getID();
-//                break;
-//            }
-//        }
-//        if(mediaID != null) {
-//            Log.d(TAG, "selectItemInDrawer: find mediaID");
-//            currentMediaID = mediaID;
-//            new Thread(new ArticleLoader(this, mediaID)).start();
-//        }else{
-//            Log.d(TAG, "selectItemInDrawer: mediaID is null");
-//        }
+    public void performArticlesDownload(String mediaID) {
+        Uri.Builder buildURL = Uri.parse(newsArticleURL).buildUpon();
+        buildURL.appendQueryParameter("sources", mediaID);
+        buildURL.appendQueryParameter("apikey", apiKey);
+        String urlToUse = buildURL.build().toString();
 
-        mDrawerLayout.closeDrawer(findViewById(R.id.c_layout));
+        Response.Listener<JSONObject> listener = new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    JSONArray storiesArray = response.getJSONArray("articles");
+                    for(int i = 0; i < storiesArray.length(); i++) {
+                        JSONObject jArticle = (JSONObject) storiesArray.get(i);
+                        String author = jArticle.getString("author");
+                        String title = jArticle.getString("title");
+                        String content = jArticle.getString("description");
+                        String url = jArticle.getString("url");
+                        String urlToImage = jArticle.getString("urlToImage");
+                        String date = jArticle.getString("publishedAt");
+
+                        NewsArticle article = new NewsArticle();
+                        article.setAuthor(author);
+                        article.setTitle(title);
+                        article.setDescription(content);
+                        article.setUrl(url);
+                        article.setUrlToImage(urlToImage);
+                        article.setDate(date);
+
+                        articleList.add(article);
+                    }
+                    runOnUiThread(() -> {
+                        setArticles(articleList);
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Log.d(TAG, "processJSON: " + e.getMessage());
+                }
+            }
+        };
+        Response.ErrorListener error = new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                try {
+                    JSONObject jsonObject = new JSONObject(new String(error.networkResponse.data));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        // Request a string response from the provided URL.
+        JsonObjectRequest jsonObjectRequest =
+                new JsonObjectRequest(Request.Method.GET, urlToUse,
+                        null, listener, error) {
+                    @Override
+                    public Map<String, String> getHeaders() {
+                        HashMap<String, String> headers = new HashMap<>();
+                        headers.put("User-Agent", "");
+                        return headers;
+                    }
+                };
+        // Add the request to the RequestQueue.
+        queue.add(jsonObjectRequest);
+
+    }
+
+    // NEED TO WORK ------------------------------------------->
+    public void setArticles(ArrayList<NewsArticle> articleList) {
+        currentNewsArticleList.addAll(articleList);
+        newsArticleAdapter.notifyDataSetChanged();
+        viewPager.setCurrentItem(0);
+        setTitle(currentMediaName + " (" + articleList.size() + ")");
     }
 
     public void setupNameList(List<String> nameList) {
@@ -468,7 +527,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        ArrayAdapter arrayAdapter = new ArrayAdapter<String>(this,   // <== Important!
+        arrayAdapter = new ArrayAdapter<String>(this,   // <== Important!
                 R.layout.drawer_item, displayMediaNames){
             @Override
             public View getView(int position, View convertView, ViewGroup parent){
@@ -487,6 +546,32 @@ public class MainActivity extends AppCompatActivity {
         mDrawerList.setAdapter(arrayAdapter);
         ((ArrayAdapter) mDrawerList.getAdapter()).notifyDataSetChanged();
 
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private void selectItemInDrawer(int position) {
+        viewPager.setBackground(null);
+        String currentMediaName = displayMediaNames.get(position);
+        this.currentMediaName = currentMediaName;
+        String mediaID = "";
+        for(Sources s: sourceList) {
+            if(s.getName().equals(currentMediaName)){
+                mediaID = s.getID();
+                break;
+            }
+        }
+        if(mediaID != null) {
+            Log.d(TAG, "selectItemInDrawer: find mediaID");
+            currentMediaID = mediaID;
+            // downloading news article based on current media id selected.
+            queue = Volley.newRequestQueue(this);
+            performArticlesDownload(currentMediaID);
+        }
+        else{
+            Log.d(TAG, "selectItemInDrawer: mediaID is null");
+        }
+
+        mDrawerLayout.closeDrawer(findViewById(R.id.c_layout));
     }
 
     private void setupSubMenu() {

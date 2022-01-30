@@ -12,9 +12,9 @@ public class NewsSourceSelection
 
 
     public NewsSourceSelection() {
-        //topic = MainActivity.menu_all;
-        //country = MainActivity.menu_all;
-        //language = MainActivity.menu_all;
+        topic = MainActivity.menu_all;
+        country = MainActivity.menu_all;
+        language = MainActivity.menu_all;
     }
 
     public void setTopic(String topic){ this.topic = topic; }

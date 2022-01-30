@@ -66,13 +66,13 @@
             android:scrollbars="vertical"
             android:text="@string/textview"
             android:textSize="18sp"
-            app:layout_constraintBottom_toTopOf="@+id/screen_num"
+            app:layout_constraintBottom_toTopOf="@+id/page_num"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/news_picture" />
 
         <TextView
-            android:id="@+id/screen_num"
+            android:id="@+id/page_num"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"

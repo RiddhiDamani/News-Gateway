@@ -1,16 +1,16 @@
 package com.riddhidamani.news_gateway;
 
+
 import java.io.Serializable;
 
 public class NewsArticle implements Serializable {
+
     private String author;
     private String title;
     private String description;
     private String url;
     private String urlToImage;
     private String date;
-
-    public NewsArticle() {};
 
     public void setAuthor(String author) {this.author = author;}
     public void setTitle(String title) {this.title = title;}
