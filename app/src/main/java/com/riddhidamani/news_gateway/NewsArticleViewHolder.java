@@ -6,8 +6,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+// News Articles (Stories) View Holder that extends RecyclerView ViewHolder
 public class NewsArticleViewHolder extends RecyclerView.ViewHolder {
 
+    // Layout fields
     TextView news_title;
     TextView news_date;
     TextView news_author;

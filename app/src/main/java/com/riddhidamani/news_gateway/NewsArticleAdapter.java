@@ -1,6 +1,9 @@
 package com.riddhidamani.news_gateway;
 
+import android.content.Intent;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,19 +13,19 @@ import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
+// News Articles (Stories) Adapter
 public class NewsArticleAdapter extends RecyclerView.Adapter<NewsArticleViewHolder> {
 
     private static final String TAG = "NewsArticleAdapter";
-    private final MainActivity mainActivity;
     private final ArrayList<NewsArticle> newsArticlesList;
+    private final MainActivity mainActivity;
 
+    // Constructor
     public NewsArticleAdapter(MainActivity mainActivity, ArrayList<NewsArticle> newsArticlesList) {
         this.mainActivity = mainActivity;
         this.newsArticlesList = newsArticlesList;
@@ -38,52 +41,69 @@ public class NewsArticleAdapter extends RecyclerView.Adapter<NewsArticleViewHold
 
     @Override
     public void onBindViewHolder(@NonNull NewsArticleViewHolder holder, int position) {
+        Date date;
+        String publishedDateFmt = null;
         NewsArticle newsArticle = newsArticlesList.get(position);
 
-        // Title
+        // Story Title
         holder.news_title.setText(newsArticle.getTitle());
+        holder.news_title.setOnClickListener(v -> openURL(newsArticle.getUrl()));
 
-        // Date
-        String dateStr = newsArticle.getDate();
+
+        // Story Date
+        String publishedDate = newsArticle.getPublishedAtDate();
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ENGLISH);
-        Date date = null;
-        String formattedDate = null;
+
         try {
-            date = format.parse(dateStr);
-            Log.d(TAG, "Date: " + date.toString()); // Sat Jan 02 00:00:00 GMT 2010
-
-            SimpleDateFormat desiredFormat = new SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.ENGLISH);
-            formattedDate = desiredFormat.format(date);
-            Log.d(TAG, "Date after formatted: " + formattedDate);
-
-        } catch (ParseException e) {
-            Log.d(TAG, "Date: wrong format" + e.getMessage());
+            date = format.parse(publishedDate);
+            SimpleDateFormat changedDateFmt = new SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.ENGLISH);
+            if (date != null) {
+                publishedDateFmt = changedDateFmt.format(date);
+            }
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            Log.d(TAG, "Incorrect Published Date Format:" + exception.getMessage());
         }
-        holder.news_date.setText(formattedDate);
+        holder.news_date.setText(publishedDateFmt);
 
-        // Author
+        // Story Author
         String newsAuthor = newsArticle.getAuthor();
         if(newsAuthor.equals("null") || newsAuthor.isEmpty()) {
             holder.news_author.setVisibility(View.GONE);
-        }else{
+        }
+        else {
             holder.news_author.setText(newsArticle.getAuthor());
         }
 
-        // Image
+        // Story Image
         ImageView imageView = holder.news_picture;
-        String imageUrl = newsArticle.getUrlToImage();
-        if(imageUrl.equals("null")) {
+        String storyImageURL = newsArticle.getUrlToImage();
+        if(storyImageURL.equals("null")) {
             imageView.setImageResource(R.drawable.noimage);
         }
-        else{
-            loadImagePicasso(imageView, imageUrl);
+        else {
+            Picasso.get().load(storyImageURL).error(R.drawable.brokenimage).placeholder(R.drawable.loading).into(imageView, new Callback() {
+                @Override
+                public void onSuccess() {
+                    Log.d(TAG, "Story Image Loaded Successfully!" + ((BitmapDrawable) imageView.getDrawable()).getBitmap().getByteCount());
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    Log.d(TAG, "Story Image Error: " + e.getMessage());
+                }
+            });
         }
+        holder.news_picture.setOnClickListener(v -> openURL(newsArticle.getUrl()));
 
 
-        // Description
+        // Story Description
         holder.news_description.setText(newsArticle.getDescription());
+        holder.news_description.setMovementMethod(new ScrollingMovementMethod());
+        holder.news_description.setOnClickListener(v -> openURL(newsArticle.getUrl()));
 
-        // Page Number
+
+        // ViewPager2 Story Page Number
         holder.page_num.setText(String.format(
                 Locale.getDefault(),"%d of %d", (position+1), newsArticlesList.size()));
 
@@ -94,24 +114,10 @@ public class NewsArticleAdapter extends RecyclerView.Adapter<NewsArticleViewHold
         return newsArticlesList.size();
     }
 
-    private void loadImagePicasso(ImageView imageView, String imageURL) {
-
-        Picasso.get().load(imageURL).error(R.drawable.brokenimage).placeholder(R.drawable.loading).into(imageView, new Callback() {
-          @Override
-          public void onSuccess() {
-              Log.d(TAG, "onSuccess: Size:" + ((BitmapDrawable) imageView.getDrawable()).getBitmap().getByteCount());
-          }
-
-          @Override
-            public void onError(Exception e) {
-                        Log.d(TAG, "onError: " + e.getMessage());
-                    }
-        });
+    // Click on article title, image, or text to go to extended article on the news source web site
+    public void openURL(String websiteURL) {
+        Uri mapUri = Uri.parse(websiteURL);
+        Intent intent = new Intent(Intent.ACTION_VIEW, mapUri);
+        mainActivity.startActivity(intent);
     }
-
-//    public void openWebsite(String websiteURL) {
-//        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(websiteURL));
-//        startActivity(browserIntent);
-//
-//    }
 }

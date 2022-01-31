@@ -7,10 +7,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.viewpager2.widget.ViewPager2;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
@@ -25,91 +23,85 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.riddhidamani.news_gateway.databinding.ActivityMainBinding;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
+    private RequestQueue queue;
+    private ActivityMainBinding binding;
     private static final String TAG = "MainActivity";
     private static final String newsSourcesURL = "https://newsapi.org/v2/sources";
     private static final String newsArticleURL = "https://newsapi.org/v2/top-headlines";
     private static final String apiKey = "b8988f2d0bbd4c0186dea5c522fefcd0";
-    private RequestQueue queue;
 
     // Drawer variables
-    private HashMap<String, Integer> colorDrawerMap = new HashMap<>();
+    private final HashMap<String, Integer> colorDrawerMap = new HashMap<>();
     private ActionBarDrawerToggle mDrawerToggle;
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
 
-    // Menu
+    // Menu variables
     private Menu opt_menu;
-    private SubMenu menu_topics;
-    private SubMenu menu_countries;
-    private SubMenu menu_languages;
-    private NewsSourceSelection selector = new NewsSourceSelection();
-    private static String submenu_topics = "Topics";
-    private static String submenu_country = "Countries";
-    private static String submenu_language = "Languages";
+    private SubMenu opt_menu_topics, opt_menu_countries, opt_menu_languages;
+    private final CategorySelection selector = new CategorySelection();
+    private static final String submenu_topics = "Topics";
+    private static final String submenu_country = "Countries";
+    private static final String submenu_language = "Languages";
     public static String menu_all = "All";
 
-    // data from JSON
+    // Json data mapping for country code and language code
     private HashMap<String, String> countryCodeToName;
     private HashMap<String, String> langCodeToName;
 
     // APIs
-    private ArrayList<Sources> srcs = new ArrayList<Sources>();
-    private List<String> listOfNames = new ArrayList<>();
-    private List<String> listOfTopics = new ArrayList<>();
-    private List<String> listOfCountries = new ArrayList<>();
-    private List<String> listOfLanguages = new ArrayList<>();
+    private final ArrayList<Sources> srcs = new ArrayList<>();
+    private final List<String> listOfNames = new ArrayList<>();
+    private final List<String> listOfTopics = new ArrayList<>();
+    private final List<String> listOfCountries = new ArrayList<>();
+    private final List<String> listOfLanguages = new ArrayList<>();
 
     // API FOR UI
     private List<Sources> sourceList = new ArrayList<>();
     private List<String> displayMediaNames = new ArrayList<>();
-    private List<String> allMediaNames = new ArrayList<>();
+    private final List<String> allMediaNames = new ArrayList<>();
     private List<String> topicList = new ArrayList<>();
-    private ArrayList<String> countryNameList = new ArrayList<>();
-    private ArrayList<String> languageNameList = new ArrayList<>();
+    private final ArrayList<String> countryNameList = new ArrayList<>();
+    private final ArrayList<String> languageNameList = new ArrayList<>();
 
     // ViewPager2
-    private NewsArticleAdapter newsArticleAdapter;
-    private ArrayAdapter<String> arrayAdapter;
-    private final ArrayList<NewsArticle> currentNewsArticleList = new ArrayList<>();
     private ViewPager2 viewPager;
+    private ArrayAdapter<String> arrayAdapter;
+    private NewsArticleAdapter newsArticleAdapter;
+    ArrayList<NewsArticle> articleList = new ArrayList<>();
+    private final ArrayList<NewsArticle> currentNewsArticleList = new ArrayList<>();
 
     // Color Menu
-    private HashMap<String, Integer> colorMenu = new HashMap<>();
-    private ArrayList<Integer> colors = new ArrayList<>();
+    private final HashMap<String, Integer> colorMenu = new HashMap<>();
+    private final ArrayList<Integer> colors = new ArrayList<>();
 
     // State to save
     private String currentMediaName;
     private String currentMediaID = "";
 
-    ArrayList<NewsArticle> articleList = new ArrayList<>();
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
         // Make sample items for menu
         mDrawerLayout = findViewById(R.id.drawer_layout);
@@ -137,9 +129,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // loading json data - countryCode, langCode from raw folder.
-        LoadAbbrDataStore.loadAbbrData(this);
-        countryCodeToName = new HashMap<>(LoadAbbrDataStore.getCountryCodeToName());
-        langCodeToName = new HashMap<>(LoadAbbrDataStore.getLangCodeToName());
+        LoadAbbrData.loadAbbreviations(this);
+        countryCodeToName = new HashMap<>(LoadAbbrData.getCountryCodeToName());
+        langCodeToName = new HashMap<>(LoadAbbrData.getLangCodeToName());
 
 
         // Download Sources Data from news api using Volley
@@ -159,6 +151,37 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putString("TOPIC", selector.getTopic());
+        outState.putString("COUNTRY", selector.getCountry());
+        outState.putString("LANGUAGE", selector.getCountry());
+        outState.putStringArrayList("MediaList", (ArrayList<String>) displayMediaNames);
+        outState.putString("MEDIA_ID", currentMediaID);
+        outState.putString("MEDIA_NAME", currentMediaName);
+
+        // Call super last
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        displayMediaNames = savedInstanceState.getStringArrayList("MediaList");
+        selector.setTopic(savedInstanceState.getString("TOPIC"));
+        selector.setCountry(savedInstanceState.getString("COUNTRY"));
+        selector.setLanguage(savedInstanceState.getString("LANGUAGE"));
+        setupDrawerItemColor();
+
+        currentMediaID = savedInstanceState.getString("MEDIA_ID");
+        queue = Volley.newRequestQueue(this);
+        performArticlesDownload(currentMediaID);
+
+        currentMediaName = savedInstanceState.getString("MEDIA_NAME");
+        setTitle(currentMediaName);
+    }
+
+    @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         // Sync the toggle state after onRestoreInstanceState has occurred.
@@ -175,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         opt_menu = menu;
-        if(menu_topics == null) {
+        if(opt_menu_topics == null) {
             setupSubMenu();
         }
         return true;
@@ -193,19 +216,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void processMenu(String s) {
-        if(s.equals(submenu_topics)){
-            selector.setTopicStatus();
-            return;
-        }else if (s.equals(submenu_country)) {
-            selector.setCountryStatus();
-            return;
-        }else if (s.equals(submenu_language)) {
-            selector.setLanguageStatus();
-            return;
-        }else {
-            if(selector.getTopicStatus()) selector.setTopic(s);
-            if(selector.getCountryStatus()) selector.setCountry(s);
-            if(selector.getLanguageStatus()) selector.setLanguage(s);
+        switch (s) {
+            case submenu_topics:
+                selector.setCategoryTopicFlag();
+                return;
+            case submenu_country:
+                selector.setCategoryCountryFlag();
+                return;
+            case submenu_language:
+                selector.setCategoryLanguageFlag();
+                return;
+            default:
+                if (selector.isCategoryTopicFlag()) selector.setTopic(s);
+                if (selector.isCategoryCountryFlag()) selector.setCountry(s);
+                if (selector.isCategoryLanguageFlag()) selector.setLanguage(s);
+                break;
         }
 
         // check Topics
@@ -229,16 +254,15 @@ public class MainActivity extends AppCompatActivity {
             String sourceName = source.getName();
 
             if(isTopicAll && isCountryAll && isLanguageAll) {
-                for(int j = 0; j < allMediaNames.size(); j++) {
-                    displayMediaNames.add(allMediaNames.get(j));
-                }
-//                displayMediaNames = allMediaNames;
+                displayMediaNames.addAll(allMediaNames);
                 break;
             }else if(isTopicAll && isCountryAll){
+                assert sourceLanguage != null;
                 if(sourceLanguage.equals(selectorLanguage)) {
                     displayMediaNames.add(sourceName);
                 }
             }else if(isTopicAll && isLanguageAll){
+                assert sourceCountry != null;
                 if(sourceCountry.equals(selectorCountry)) {
                     displayMediaNames.add(sourceName);
                 }
@@ -247,23 +271,38 @@ public class MainActivity extends AppCompatActivity {
                     displayMediaNames.add(sourceName);
                 }
             }else if (isTopicAll) {
-                if(sourceCountry.equals(selectorCountry) && sourceLanguage.equals(selectorLanguage)) {
-                    displayMediaNames.add(sourceName);
+                assert sourceCountry != null;
+                if(sourceCountry.equals(selectorCountry)) {
+                    assert sourceLanguage != null;
+                    if (sourceLanguage.equals(selectorLanguage)) {
+                        displayMediaNames.add(sourceName);
+                    }
                 }
             }else if (isCountryAll) {
-                if(sourceTopic.equals(selectorTopic) && sourceLanguage.equals(selectorLanguage)) {
-                    displayMediaNames.add(sourceName);
+                if(sourceTopic.equals(selectorTopic)) {
+                    assert sourceLanguage != null;
+                    if (sourceLanguage.equals(selectorLanguage)) {
+                        displayMediaNames.add(sourceName);
+                    }
                 }
             }else if (isLanguageAll) {
-                if(sourceTopic.equals(selectorTopic) && sourceCountry.equals(selectorCountry))
-                    displayMediaNames.add(sourceName);
+                if(sourceTopic.equals(selectorTopic)) {
+                    assert sourceCountry != null;
+                    if (sourceCountry.equals(selectorCountry)) displayMediaNames.add(sourceName);
+                }
             }else { // all selected
-                if(sourceTopic.equals(selectorTopic) && sourceCountry.equals(selectorCountry) && sourceLanguage.equals(selectorLanguage) ) {
-                    displayMediaNames.add(sourceName);
+                if(sourceTopic.equals(selectorTopic)) {
+                    assert sourceCountry != null;
+                    if (sourceCountry.equals(selectorCountry)) {
+                        assert sourceLanguage != null;
+                        if (sourceLanguage.equals(selectorLanguage)) {
+                            displayMediaNames.add(sourceName);
+                        }
+                    }
                 }
             }
         }
-        selector.finishSelecting();
+        selector.completeFlag();
 
         // TODO no result alert
         if(displayMediaNames.size() < 1) {
@@ -276,12 +315,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void noResultAlert(String topic, String country, String language) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-            }
-        });
-
+        builder.setPositiveButton("OK", (dialog, id) -> { });
         builder.setTitle("No Sources");
         String message = "No News Sources match your criteria: \n" +
                 "\nTopic: " + topic +
@@ -300,61 +334,55 @@ public class MainActivity extends AppCompatActivity {
 
         // Creating Response Listener - listener will receive the response from my request to get internet content
 
-        Response.Listener<JSONObject> listener = new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                try {
-                    JSONArray sources = response.getJSONArray("sources");
-                    for(int i = 0; i < sources.length(); i++) {
-                        JSONObject jSource = (JSONObject) sources.get(i);
-                        String id = jSource.getString("id");
-                        String name = jSource.getString("name");
-                        String category = jSource.getString("category");
-                        String language = jSource.getString("language");
-                        String country = jSource.getString("country");
+        Response.Listener<JSONObject> listener = response -> {
+            try {
+                JSONArray sources = response.getJSONArray("sources");
+                for(int i = 0; i < sources.length(); i++) {
+                    JSONObject jSource = (JSONObject) sources.get(i);
+                    String id = jSource.getString("id");
+                    String name = jSource.getString("name");
+                    String category = jSource.getString("category");
+                    String language = jSource.getString("language");
+                    String country = jSource.getString("country");
 
-                        Sources srcData = new Sources(id, name, category,language,country);
-                        srcs.add(srcData);
-                        // get non-repeated topics
-                        if(!listOfTopics.contains(category)) {
-                            listOfTopics.add(category);
-                        }
-                        // get non-repeated countries
-                        if(!listOfCountries.contains(country)) {
-                            listOfCountries.add(country);
-                        }
-                        // get non-repeated languages
-                        if(!listOfLanguages.contains(language)) {
-                            listOfLanguages.add(language);
-                        }
-                        // get non-repeated media name
-                        if(!listOfNames.contains(name)) {
-                            listOfNames.add(name);
-                        }
+                    Sources srcData = new Sources(id, name, category,language,country);
+                    srcs.add(srcData);
+                    // get non-repeated topics
+                    if(!listOfTopics.contains(category)) {
+                        listOfTopics.add(category);
                     }
-                    runOnUiThread(() -> {
-                        setupNameList(listOfNames);
-                        setupTopicList(listOfTopics);
-                        getSources(srcs);
-                        setupCountryList(listOfCountries);
-                        setupLanguageList(listOfLanguages);
-                        setupDrawerItemColor();
-
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    // get non-repeated countries
+                    if(!listOfCountries.contains(country)) {
+                        listOfCountries.add(country);
+                    }
+                    // get non-repeated languages
+                    if(!listOfLanguages.contains(language)) {
+                        listOfLanguages.add(language);
+                    }
+                    // get non-repeated media name
+                    if(!listOfNames.contains(name)) {
+                        listOfNames.add(name);
+                    }
                 }
+                runOnUiThread(() -> {
+                    setupNameList(listOfNames);
+                    setupTopicList(listOfTopics);
+                    getSources(srcs);
+                    setupCountryList(listOfCountries);
+                    setupLanguageList(listOfLanguages);
+                    setupDrawerItemColor();
+
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         };
-        Response.ErrorListener error = new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                try {
-                    JSONObject jsonObject = new JSONObject(new String(error.networkResponse.data));
-                    System.out.println(jsonObject.toString());
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+        Response.ErrorListener error = error1 -> {
+            try {
+                JSONObject jsonObject = new JSONObject(new String(error1.networkResponse.data));
+                Log.d(TAG, "jsonObject: " + jsonObject);
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
         };
         // Request a string response from the provided URL.
@@ -383,47 +411,40 @@ public class MainActivity extends AppCompatActivity {
         articleList.clear();
         currentNewsArticleList.clear();
 
-        Response.Listener<JSONObject> listener = new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                try {
-                    JSONArray storiesArray = response.getJSONArray("articles");
-                    for(int i = 0; i < storiesArray.length(); i++) {
-                        JSONObject jArticle = (JSONObject) storiesArray.get(i);
-                        String author = jArticle.getString("author");
-                        String title = jArticle.getString("title");
-                        String content = jArticle.getString("description");
-                        String url = jArticle.getString("url");
-                        String urlToImage = jArticle.getString("urlToImage");
-                        String date = jArticle.getString("publishedAt");
+        Response.Listener<JSONObject> listener = response -> {
+            try {
+                JSONArray storiesArray = response.getJSONArray("articles");
+                for(int i = 0; i < storiesArray.length(); i++) {
+                    JSONObject jArticle = (JSONObject) storiesArray.get(i);
+                    String author = jArticle.getString("author");
+                    String title = jArticle.getString("title");
+                    String content = jArticle.getString("description");
+                    String url = jArticle.getString("url");
+                    String urlToImage = jArticle.getString("urlToImage");
+                    String date = jArticle.getString("publishedAt");
 
-                        NewsArticle article = new NewsArticle();
-                        article.setAuthor(author);
-                        article.setTitle(title);
-                        article.setDescription(content);
-                        article.setUrl(url);
-                        article.setUrlToImage(urlToImage);
-                        article.setDate(date);
+                    NewsArticle article = new NewsArticle();
+                    article.setAuthor(author);
+                    article.setTitle(title);
+                    article.setDescription(content);
+                    article.setUrl(url);
+                    article.setUrlToImage(urlToImage);
+                    article.setPublishedAtDate(date);
 
-                        articleList.add(article);
-                    }
-                    runOnUiThread(() -> {
-                        setArticles(articleList);
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Log.d(TAG, "processJSON: " + e.getMessage());
+                    articleList.add(article);
                 }
+                runOnUiThread(() -> setArticles(articleList));
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.d(TAG, "processJSON: " + e.getMessage());
             }
         };
-        Response.ErrorListener error = new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                try {
-                    JSONObject jsonObject = new JSONObject(new String(error.networkResponse.data));
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+        Response.ErrorListener error = error1 -> {
+            try {
+                JSONObject jsonObject = new JSONObject(new String(error1.networkResponse.data));
+                Log.d(TAG, "Error jsonObject: " + jsonObject);
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
         };
         // Request a string response from the provided URL.
@@ -442,6 +463,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     public void setArticles(ArrayList<NewsArticle> articleList) {
         currentNewsArticleList.clear();
         setTitle(currentMediaName);
@@ -456,9 +478,7 @@ public class MainActivity extends AppCompatActivity {
         if(displayMediaNames.isEmpty()) {
             displayMediaNames = nameList;
         }
-        for(int i = 0; i < nameList.size(); i ++) {
-            allMediaNames.add(nameList.get(i));
-        }
+        allMediaNames.addAll(nameList);
 
         mDrawerList.setAdapter(new ArrayAdapter<>(this, R.layout.drawer_item, displayMediaNames));
 
@@ -522,7 +542,6 @@ public class MainActivity extends AppCompatActivity {
                 String menuTopic = key;
                 int menuColor = colorMenu.get(key);
                 if(sourceTopic.equals(menuTopic)) {
-                    //source.setColor(menuColor);
                     String sourceName = source.getName();
                     colorDrawerMap.put(sourceName, menuColor);
                     break;
@@ -530,12 +549,12 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        arrayAdapter = new ArrayAdapter<String>(this,   // <== Important!
+        arrayAdapter = new ArrayAdapter<String>(this,
                 R.layout.drawer_item, displayMediaNames){
             @Override
-            public View getView(int position, View convertView, ViewGroup parent){
+            public View getView(int position, View convertView, ViewGroup parent) {
                 View view = super.getView(position, convertView, parent);
-                TextView currentTextView = ((TextView)view.findViewById(R.id.text_view));
+                TextView currentTextView = view.findViewById(R.id.text_view);
                 String currentMediaName = currentTextView.getText().toString();
                 int colorInt;
                 if(colorDrawerMap.containsKey(currentMediaName)){
@@ -543,7 +562,7 @@ public class MainActivity extends AppCompatActivity {
                     currentTextView.setTextColor(colorInt);
                 }
                 return view;
-            };
+            }
         };
 
         mDrawerList.setAdapter(arrayAdapter);
@@ -560,7 +579,7 @@ public class MainActivity extends AppCompatActivity {
         String mediaID = "";
         for(Sources s: sourceList) {
             if(s.getName().equals(currentMediaName)){
-                mediaID = s.getID();
+                mediaID = s.getId();
                 break;
             }
         }
@@ -579,13 +598,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupSubMenu() {
-        if(menu_topics == null) {
-            menu_topics = opt_menu.addSubMenu(submenu_topics);
-            menu_countries = opt_menu.addSubMenu(submenu_country);
-            menu_languages = opt_menu.addSubMenu(submenu_language);
-            menu_topics.add(menu_all);
-            menu_countries.add(menu_all);
-            menu_languages.add(menu_all);
+        if(opt_menu_topics == null) {
+            opt_menu_topics = opt_menu.addSubMenu(submenu_topics);
+            opt_menu_countries = opt_menu.addSubMenu(submenu_country);
+            opt_menu_languages = opt_menu.addSubMenu(submenu_language);
+            opt_menu_topics.add(menu_all);
+            opt_menu_countries.add(menu_all);
+            opt_menu_languages.add(menu_all);
         }
 
         // setup topics in menu
@@ -593,7 +612,7 @@ public class MainActivity extends AppCompatActivity {
 
         for(int i = 0; i < topicList.size(); i++) {
             String category = topicList.get(i);
-            MenuItem currentTopic = menu_topics.add(category);
+            MenuItem currentTopic = opt_menu_topics.add(category);
             if(colors.get(colorCounter) == null) {
                 colorCounter = 0;
             }
@@ -608,11 +627,11 @@ public class MainActivity extends AppCompatActivity {
         }
         // setup country in menu
         for(String country : countryNameList) {
-            menu_countries.add(country);
+            opt_menu_countries.add(country);
         }
         // setup languages in menu
         for(String languageName : languageNameList){
-            menu_languages.add(languageName);
+            opt_menu_languages.add(languageName);
         }
     }
 

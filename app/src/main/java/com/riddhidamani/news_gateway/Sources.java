@@ -1,13 +1,15 @@
 package com.riddhidamani.news_gateway;
 
+// Source class
 public class Sources {
-    private String id;
-    private String name;
-    private String category;
-    private String language;
-    private String country;
-    private int color;
 
+    private final String id;
+    private final String name;
+    private final String category;
+    private final String language;
+    private final String country;
+
+    // Constructor
     public Sources(String id, String name, String category, String language, String country) {
         this.id = id;
         this.name = name;
@@ -16,13 +18,21 @@ public class Sources {
         this.country = country;
     }
 
-    public String getID() { return this.id; }
-    public String getName() { return this.name; }
-    public String getCategory() { return this.category; }
-    public String getLanguage() { return this.language; }
-    public String getCountry() { return this.country; }
-
-    public void setColor(int color) { this.color = color; }
-    public int getColor() {return this.color;}
+    // Getter methods
+    public String getId() {
+        return id;
+    }
+    public String getName() {
+        return name;
+    }
+    public String getCategory() {
+        return category;
+    }
+    public String getLanguage() {
+        return language;
+    }
+    public String getCountry() {
+        return country;
+    }
 }
 
