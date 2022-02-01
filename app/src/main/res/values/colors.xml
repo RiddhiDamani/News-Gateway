@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
+    <color name="purple_500">#2c6e1e</color>
+    <color name="purple_700">#132f0d</color>
+<!--    <color name="purple_500">#FF6200EE</color>-->
+<!--    <color name="purple_700">#FF3700B3</color>-->
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
@@ -10,15 +12,15 @@
     <color name="colorPrimaryDark">#303F9F</color>
 
 
-    <color name="category_0">#FFE082</color>
-    <color name="category_1">#FF8A65</color>
-    <color name="category_2">#CDDC39</color>
-    <color name="category_3">#00BC08</color>
-    <color name="category_4">#00BCD4</color>
-    <color name="category_5">#2547FF</color>
-    <color name="category_6">#B792FB</color>
-    <color name="category_7">#FFBAD6</color>
-    <color name="category_8">#9FA8DA</color>
-    <color name="category_9">#80DEEA</color>
-    <color name="category_10">#C5E1A5</color>
+    <!-- Color-Coded Sub Menu -->
+    <color name="subMenuCat1">#eed731</color>
+    <color name="subMenuCat2">#FF8A77</color>
+    <color name="subMenuCat3">#CDDC45</color>
+    <color name="subMenuCat4">#5cb946</color>
+    <color name="subMenuCat5">#2686d9</color>
+    <color name="subMenuCat6">#1b5e98</color>
+    <color name="subMenuCat7">#ac3bc4</color>
+    <color name="subMenuCat8">#dcace6</color>
+    <color name="subMenuCat9">#6c7793</color>
+    <color name="subMenuCat10">#21b3de</color>
 </resources>

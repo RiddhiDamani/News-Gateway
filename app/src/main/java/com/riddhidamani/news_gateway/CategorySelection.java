@@ -14,9 +14,9 @@ public class CategorySelection
 
     // Constructor - Setting all as default value
     public CategorySelection() {
-        topic = MainActivity.menu_all;
-        country = MainActivity.menu_all;
-        language = MainActivity.menu_all;
+        topic = MainActivity.opt_subMenu_All;
+        country = MainActivity.opt_subMenu_All;
+        language = MainActivity.opt_subMenu_All;
     }
 
     // setter methods
