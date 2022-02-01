@@ -14,4 +14,5 @@ Uses: Drawer Layout, ViewPager2, Adapters, Internet, APIs, Dynamic Menus, Implie
 
 Emulator Devices used for testing: Emulator used: Pixel 2 API 31 | Resolution: 1080 x 1920 | Details: With PlayStore
 
-## Demo
+## Video Demo
+<img src="./app/src/main/res/news-gateway.gif" width="300" height="500"/>
