@@ -11,3 +11,7 @@ Uses: Drawer Layout, ViewPager2, Adapters, Internet, APIs, Dynamic Menus, Implie
 6.  Selecting a language will limit the news source choices to only those offering news in the selected language.
 7.  News articles are viewed by swiping right to read the next article, and left to go back to the previous article
 8.  The user can go to the complete extended article on the news source’s website by clicking on the article title, text, or image content.
+
+Emulator Devices used for testing: Emulator used: Pixel 2 API 31 | Resolution: 1080 x 1920 | Details: With PlayStore
+
+## Demo

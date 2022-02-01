@@ -82,7 +82,7 @@ public class NewsArticleAdapter extends RecyclerView.Adapter<NewsArticleViewHold
             imageView.setImageResource(R.drawable.noimage);
         }
         else {
-            Picasso.get().load(storyImageURL).error(R.drawable.brokenimage).placeholder(R.drawable.loading).into(imageView, new Callback() {
+            Picasso.get().load(storyImageURL).fit().error(R.drawable.brokenimage).placeholder(R.drawable.loading).into(imageView, new Callback() {
                 @Override
                 public void onSuccess() {
                     Log.d(TAG, "Story Image Loaded Successfully!" + ((BitmapDrawable) imageView.getDrawable()).getBitmap().getByteCount());

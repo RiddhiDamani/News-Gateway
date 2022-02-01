@@ -482,23 +482,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // News Source Names Build
-    public void newsSrcNamesBuild(ArrayList<String> nameList) {
-        if(nameList == null) return;
+    public void newsSrcNamesBuild(ArrayList<String> newsSourceName) {
+        if(newsSourceName == null) return;
         if(sourceNewsName.isEmpty()) {
-            sourceNewsName = nameList;
+            sourceNewsName = newsSourceName;
         }
-        sourceNewsNameAll.addAll(nameList);
-
+        sourceNewsNameAll.addAll(newsSourceName);
         mDrawerList.setAdapter(new ArrayAdapter<>(this, R.layout.drawer_item, sourceNewsName));
-
         // show drawer icon
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setHomeButtonEnabled(true);
         }
-
-        setTitle("News Gateway ("+  sourceNewsName.size() + ")");
-
+        setTitle("News Gateway" + " (" + sourceNewsName.size() + ") ");
     }
 
     // Building Topic List
